@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biblioteca REVIT - Projelmec</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/framer-motion/10.16.4/framer-motion.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .card-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .breadcrumb-item {
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        
+        .breadcrumb-item:hover {
+            color: #667eea;
+        }
+        
+        .search-highlight {
+            background-color: #fef3c7;
+            font-weight: 600;
+        }
+        
+        .file-icon {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 700;
+            font-size: 18px;
+        }
+        
+        .folder-icon {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: white;
+            font-size: 24px;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .stats-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="gradient-bg text-white shadow-lg">
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold">Biblioteca REVIT</h1>
+                    <p class="text-blue-100 mt-1">Arquivos de Família para seus projetos</p>
+                </div>
+                <div class="text-right">
+                    <img src="https://projelmec.com.br/wp-content/uploads/2020/07/cropped-Logo-Fundo-Branco-270x180.png" alt="Projelmec" class="h-16 bg-white rounded-lg px-3 py-2">
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-4 py-8">
+        <!-- Search Bar -->
+        <div class="mb-8 fade-in">
+            <div class="relative max-w-2xl mx-auto">
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    placeholder="Buscar arquivos ou pastas..." 
+                    class="w-full px-6 py-4 text-lg border-2 border-gray-300 rounded-xl focus:border-purple-500 focus:outline-none shadow-sm"
+                >
+                <svg class="absolute right-4 top-4 w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div id="statsContainer" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"></div>
+
+        <!-- Breadcrumb -->
+        <div id="breadcrumb" class="mb-6 text-sm text-gray-600 flex items-center flex-wrap gap-2"></div>
+
+        <!-- Content Grid -->
+        <div id="content" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden text-center py-16">
+            <svg class="mx-auto h-24 w-24 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <h3 class="text-xl font-semibold text-gray-700 mb-2">Nenhum resultado encontrado</h3>
+            <p class="text-gray-500">Tente buscar com outros termos</p>
+        </div>
+    </div>
+
+    <script>
+        let data = {};
+        let currentPath = [];
+        let allFiles = [];
+        let searchMode = false;
+
+        // Initialize
+        async function init() {
+            try {
+                // Carrega o arquivo base.json da mesma pasta
+                const response = await fetch('./base.json');
+                
+                if (!response.ok) {
+                    throw new Error(`Erro ao carregar base.json: ${response.status} ${response.statusText}`);
+                }
+                
+                data = await response.json();
+                extractAllFiles(data);
+                updateStats();
+                render();
+            } catch (error) {
+                console.error('Erro ao carregar dados:', error);
+                document.getElementById('content').innerHTML = `
+                    <div class="col-span-full text-center py-16">
+                        <svg class="mx-auto h-24 w-24 text-red-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <p class="text-red-500 text-lg font-semibold mb-2">Erro ao carregar os arquivos</p>
+                        <p class="text-gray-600 text-sm">Certifique-se de que o arquivo <strong>base.json</strong> está na mesma pasta do HTML.</p>
+                        <p class="text-gray-500 text-xs mt-2">Erro: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Extract all files for search and stats
+        function extractAllFiles(obj, path = []) {
+            for (let key in obj) {
+                if (typeof obj[key] === 'string') {
+                    allFiles.push({
+                        name: key,
+                        url: obj[key],
+                        path: [...path, key]
+                    });
+                } else if (typeof obj[key] === 'object') {
+                    extractAllFiles(obj[key], [...path, key]);
+                }
+            }
+        }
+
+        // Update statistics
+        function updateStats() {
+            const folders = new Set();
+            allFiles.forEach(file => {
+                file.path.slice(0, -1).forEach((folder, i) => {
+                    folders.add(file.path.slice(0, i + 1).join('/'));
+                });
+            });
+
+            const stats = [
+                { label: 'Total de Arquivos', value: allFiles.length, icon: '📄', color: 'from-blue-500 to-blue-600' },
+                { label: 'Pastas', value: folders.size, icon: '📁', color: 'from-purple-500 to-purple-600' },
+                { label: 'Categorias', value: Object.keys(data['REVIT SITE'] || data).length, icon: '🗂️', color: 'from-green-500 to-green-600' }
+            ];
+
+            document.getElementById('statsContainer').innerHTML = stats.map(stat => `
+                <div class="stats-card card-hover">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 text-sm font-medium">${stat.label}</p>
+                            <p class="text-3xl font-bold text-gray-800 mt-1">${stat.value}</p>
+                        </div>
+                        <div class="text-4xl bg-gradient-to-br ${stat.color} w-16 h-16 rounded-xl flex items-center justify-center shadow-lg">
+                            ${stat.icon}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Get current level data
+        function getCurrentData() {
+            let current = data['REVIT SITE'] || data;
+            for (let folder of currentPath) {
+                current = current[folder];
+            }
+            return current;
+        }
+
+        // Render breadcrumb
+        function renderBreadcrumb() {
+            const breadcrumb = document.getElementById('breadcrumb');
+            const items = ['Início', ...currentPath];
+            
+            breadcrumb.innerHTML = items.map((item, index) => {
+                const isLast = index === items.length - 1;
+                return `
+                    <span class="breadcrumb-item ${isLast ? 'text-purple-600 font-semibold' : 'text-gray-600'}" 
+                          onclick="navigateTo(${index - 1})">
+                        ${item}
+                    </span>
+                    ${!isLast ? '<span class="text-gray-400">›</span>' : ''}
+                `;
+            }).join('');
+        }
+
+        // Render content
+        function render() {
+            const current = getCurrentData();
+            const content = document.getElementById('content');
+            renderBreadcrumb();
+            
+            const items = Object.entries(current).sort((a, b) => {
+                const aIsFolder = typeof a[1] !== 'string';
+                const bIsFolder = typeof b[1] !== 'string';
+                if (aIsFolder && !bIsFolder) return -1;
+                if (!aIsFolder && bIsFolder) return 1;
+                return a[0].localeCompare(b[0]);
+            });
+
+            if (items.length === 0) {
+                content.innerHTML = '';
+                document.getElementById('emptyState').classList.remove('hidden');
+                return;
+            }
+
+            document.getElementById('emptyState').classList.add('hidden');
+            
+            content.innerHTML = items.map(([key, value]) => {
+                const isFolder = typeof value !== 'string';
+                
+                if (isFolder) {
+                    const fileCount = countFiles(value);
+                    return `
+                        <div class="bg-white rounded-xl p-6 shadow-md card-hover cursor-pointer fade-in" 
+                             onclick="navigateInto('${key.replace(/'/g, "\\'")}')">
+                            <div class="flex items-start gap-4">
+                                <div class="folder-icon">📁</div>
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-gray-800 text-lg mb-1">${key}</h3>
+                                    <p class="text-sm text-gray-500">${fileCount} arquivo${fileCount !== 1 ? 's' : ''}</p>
+                                </div>
+                                <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div class="bg-white rounded-xl p-6 shadow-md card-hover fade-in">
+                            <div class="flex items-start gap-4">
+                                <div class="file-icon">.rfa</div>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="font-medium text-gray-800 mb-2 truncate" title="${key}">${key}</h3>
+                                    <a href="${value}" 
+                                       class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:from-purple-600 hover:to-blue-600 transition-all text-sm font-medium shadow-sm"
+                                       download>
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                        </svg>
+                                        Download
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }).join('');
+        }
+
+        // Count files in folder
+        function countFiles(obj) {
+            let count = 0;
+            for (let key in obj) {
+                if (typeof obj[key] === 'string') {
+                    count++;
+                } else {
+                    count += countFiles(obj[key]);
+                }
+            }
+            return count;
+        }
+
+        // Navigation functions
+        function navigateInto(folder) {
+            currentPath.push(folder);
+            render();
+        }
+
+        function navigateTo(index) {
+            if (index < 0) {
+                currentPath = [];
+            } else {
+                currentPath = currentPath.slice(0, index + 1);
+            }
+            render();
+        }
+
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase().trim();
+            
+            if (!searchTerm) {
+                searchMode = false;
+                render();
+                return;
+            }
+
+            searchMode = true;
+            const results = allFiles.filter(file => 
+                file.name.toLowerCase().includes(searchTerm) ||
+                file.path.some(p => p.toLowerCase().includes(searchTerm))
+            );
+
+            const content = document.getElementById('content');
+            document.getElementById('breadcrumb').innerHTML = `
+                <span class="text-purple-600 font-semibold">Resultados da busca: "${searchTerm}"</span>
+                <span class="text-gray-400">›</span>
+                <span class="text-gray-600">${results.length} resultado${results.length !== 1 ? 's' : ''}</span>
+            `;
+
+            if (results.length === 0) {
+                content.innerHTML = '';
+                document.getElementById('emptyState').classList.remove('hidden');
+                return;
+            }
+
+            document.getElementById('emptyState').classList.add('hidden');
+
+            content.innerHTML = results.map(file => {
+                const pathStr = file.path.slice(0, -1).join(' › ');
+                const highlightedName = file.name.replace(
+                    new RegExp(searchTerm, 'gi'),
+                    match => `<span class="search-highlight">${match}</span>`
+                );
+                
+                return `
+                    <div class="bg-white rounded-xl p-6 shadow-md card-hover fade-in">
+                        <div class="flex items-start gap-4">
+                            <div class="file-icon">.rfa</div>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="font-medium text-gray-800 mb-1" title="${file.name}">${highlightedName}</h3>
+                                <p class="text-xs text-gray-500 mb-3 truncate" title="${pathStr}">${pathStr}</p>
+                                <div class="flex gap-2">
+                                    <a href="${file.url}" 
+                                       class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:from-purple-600 hover:to-blue-600 transition-all text-sm font-medium shadow-sm"
+                                       download>
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                        </svg>
+                                        Download
+                                    </a>
+                                    <button onclick="navigateToFile(${JSON.stringify(file.path).replace(/"/g, '&quot;')})" 
+                                            class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all text-sm font-medium">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                                        </svg>
+                                        Ver pasta
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        });
+
+        // Navigate to file location
+        function navigateToFile(filePath) {
+            document.getElementById('searchInput').value = '';
+            searchMode = false;
+            currentPath = filePath.slice(0, -1);
+            render();
+        }
+
+        // Initialize app
+        init();
+    </script>
+</body>
+</html>
