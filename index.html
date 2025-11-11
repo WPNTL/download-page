@@ -112,6 +112,17 @@
             height: auto;
             margin-bottom: 20px;
             filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .logo:hover {
+            transform: translateY(-2px);
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+        }
+
+        .logo:active {
+            transform: translateY(0);
         }
 
         .header h1 {
@@ -607,7 +618,9 @@
 
         <!-- Header -->
         <header class="header">
-            <img src="https://projelmec.com.br/wp-content/uploads/2024/11/Projelmec-az.png" alt="Projelmec Logo" class="logo">
+            <a href="https://projelmec.com.br/" target="_blank" rel="noopener noreferrer" title="Voltar ao site da Projelmec">
+                <img src="https://projelmec.com.br/wp-content/uploads/2024/11/Projelmec-az.png" alt="Projelmec Logo" class="logo">
+            </a>
             <h1>
                 Biblioteca REVIT
                 <img src="https://projelmec.com.br/original/revit6.png" alt="Revit" class="revit-logo">
