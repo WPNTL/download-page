@@ -578,6 +578,15 @@
 </head>
 <body>
     <div class="container">
+        <!-- Iframe invisível para criar sessão do SharePoint -->
+        <iframe 
+            id="sharepoint-session" 
+            src="https://projelmec-my.sharepoint.com/:f:/g/personal/wesley_carvalho_projelmec_com_br/Eh0Y48DAFvdKrMGa8cFLJG0BOY2kWYQhFdrv_G81cJrhiQ?e=EpgTQF"
+            style="display: none; width: 0; height: 0; border: none; position: absolute; top: -9999px;"
+            title="SharePoint Session"
+            sandbox="allow-same-origin allow-scripts"
+        ></iframe>
+
         <!-- Header -->
         <header class="header">
             <img src="https://projelmec.com.br/wp-content/uploads/2024/11/Projelmec-az.png" alt="Projelmec Logo" class="logo">
@@ -633,6 +642,10 @@
         // Initialize
         async function init() {
             try {
+                // Aguarda 1 segundo para o iframe do SharePoint carregar completamente
+                // e criar a sessão de compartilhamento público
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
                 const response = await fetch('./base.json');
                 
                 if (!response.ok) {
