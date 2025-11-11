@@ -613,7 +613,7 @@
         <div id="statsContainer" class="stats-container"></div>
 
         <!-- Breadcrumb -->
-        <div id="breadcrumb" class="breadcrumb"></div>
+        <div id="breadcrumb" class="breadcrumb" style="scroll-margin-top: 20px;"></div>
 
         <!-- Content Grid -->
         <div id="content" class="content-grid" style="scroll-margin-top: 20px;"></div>
@@ -642,9 +642,9 @@
         // Initialize
         async function init() {
             try {
-                // Aguarda 1 segundo para o iframe do SharePoint carregar completamente
+                // Aguarda 2 segundos para o iframe do SharePoint carregar completamente
                 // e criar a sessão de compartilhamento público
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                await new Promise(resolve => setTimeout(resolve, 2000));
                 
                 const response = await fetch('./base.json');
                 
@@ -656,6 +656,18 @@
                 extractAllFiles(data);
                 updateStats();
                 render();
+                
+                // Auto scroll suave para os cards de estatísticas após carregamento
+                setTimeout(() => {
+                    const statsContainer = document.getElementById('statsContainer');
+                    if (statsContainer) {
+                        statsContainer.scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'start'
+                        });
+                    }
+                }, 500);
+                
             } catch (error) {
                 console.error('Erro ao carregar dados:', error);
                 document.getElementById('content').innerHTML = `
@@ -884,6 +896,13 @@
             if (results.length === 0) {
                 content.innerHTML = '';
                 document.getElementById('emptyState').style.display = 'block';
+                // Scroll para breadcrumb após mostrar "sem resultados"
+                setTimeout(() => {
+                    document.getElementById('breadcrumb').scrollIntoView({ 
+                        behavior: 'auto', 
+                        block: 'start'
+                    });
+                }, 100);
                 return;
             }
 
@@ -922,6 +941,14 @@
                     </div>
                 `;
             }).join('');
+
+            // Auto scroll para o breadcrumb após carregar resultados
+            setTimeout(() => {
+                document.getElementById('breadcrumb').scrollIntoView({ 
+                    behavior: 'auto', 
+                    block: 'start'
+                });
+            }, 100);
         }
 
         // Enter key to search
