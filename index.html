@@ -120,6 +120,18 @@
             margin-bottom: 12px;
             font-weight: 700;
             letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .revit-logo {
+            height: 48px;
+            width: 48px;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
         }
 
         .header p {
@@ -556,6 +568,12 @@
 
             .header h1 {
                 font-size: 24px;
+                gap: 12px;
+            }
+
+            .revit-logo {
+                height: 40px;
+                width: 40px;
             }
 
             .logo {
@@ -590,7 +608,10 @@
         <!-- Header -->
         <header class="header">
             <img src="https://projelmec.com.br/wp-content/uploads/2024/11/Projelmec-az.png" alt="Projelmec Logo" class="logo">
-            <h1>Biblioteca REVIT</h1>
+            <h1>
+                Biblioteca REVIT
+                <img src="https://projelmec.com.br/original/revit6.png" alt="Revit" class="revit-logo">
+            </h1>
             <p>Arquivos de Família (.rfa) para seus projetos</p>
         </header>
 
@@ -751,11 +772,14 @@
                 `;
             }).join('');
 
+            // Botão "Voltar ao Início" aparece sempre, exceto quando já está no início
+            const showHomeButton = currentPath.length > 0 || searchMode;
+
             breadcrumb.innerHTML = `
                 <div class="breadcrumb-content">
                     ${breadcrumbItems}
                 </div>
-                ${searchMode ? `
+                ${showHomeButton ? `
                     <button class="btn-home" onclick="goHome()">
                         <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
