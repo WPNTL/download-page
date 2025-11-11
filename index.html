@@ -839,9 +839,9 @@
                                         </svg>
                                         Download
                                     </a>
-                                    <button onclick="navigateToFile(${JSON.stringify(file.path).replace(/"/g, '&quot;')})" class="btn btn-secondary">
+                                    <button onclick="navigateToFile(${JSON.stringify(file.path).replace(/"/g, '&quot;')}); event.stopPropagation();" class="btn btn-secondary">
                                         <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 4 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
                                         </svg>
                                         Ver pasta
                                     </button>
@@ -864,8 +864,12 @@
         function navigateToFile(filePath) {
             document.getElementById('searchInput').value = '';
             searchMode = false;
-            currentPath = filePath.slice(0, -1);
+            // Remove "REVIT SITE" do caminho se existir
+            const cleanPath = filePath[0] === 'REVIT SITE' ? filePath.slice(1) : filePath;
+            currentPath = cleanPath.slice(0, -1);
             render();
+            // Scroll suave para o topo
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         // Initialize app
