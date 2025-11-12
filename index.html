@@ -680,7 +680,7 @@
                 // e criar a sessão de compartilhamento público
                 await new Promise(resolve => setTimeout(resolve, 2000));
                 
-                const response = await fetch('./base.json');
+                const response = await fetch('./base.min.json');
                 
                 if (!response.ok) {
                     throw new Error(`Erro ao carregar base.json: ${response.status} ${response.statusText}`);
